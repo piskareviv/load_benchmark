@@ -92,8 +92,8 @@ def plot_benchmark_results(results, compile_line, proc_model, file, output_file,
     ax.axvline(x=13, linestyle="--")
     ax.axvline(x=18, linestyle="--")
     ax.axvline(x=21, linestyle="--")
-    ax.axvline(x=0)
-    ax.axhline(y=0)
+    # ax.axvline(x=0)
+    # ax.axhline(y=0)
 
     for mode, res in zip(modes, results):
         x, y = zip(*res)
