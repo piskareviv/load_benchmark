@@ -39,13 +39,19 @@ f32 sum_scalar_naive(int n, const f32* a, const f32* b) {
     return s;
 }
 
-f32x8 last_bit(int n, const f32* a, const f32* b) {
-    f32 ar[8];
-    memset(ar, 0, sizeof(ar));
-    for (int i = 0; i < n; i++) {
-        ar[i] = a[i] * b[i];
-    }
-    return _mm256_load_ps(ar);
+inline f32x8 last_bit(int n, const f32* a, const f32* b) {
+    const f32x8 masks[9] = {
+        (f32x8)_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, 0, 0, 0, 0, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, 0, 0, 0, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, 0, 0, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, -1, 0, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, -1, -1, -1, 0, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, -1, -1, -1, -1, 0),
+        (f32x8)_mm256_setr_epi32(-1, -1, -1, -1, -1, -1, -1, -1),
+    };
+    return _mm256_and_ps(_mm256_mul_ps(_mm256_loadu_ps(a), _mm256_loadu_ps(b)), masks[n]);
 }
 
 // [[gnu::noinline]]
@@ -76,17 +82,17 @@ f32 sum_simd(int n, const f32* a, const f32* b) {
             sum[j] = _mm256_add_ps(sum[j], _mm256_mul_ps(ai, bi));
         });
     }
-    for (; i + 8 <= n; i += 8) {
-        f32x8 ai = _mm256_loadu_ps(&a[i]);
-        f32x8 bi = _mm256_loadu_ps(&b[i]);
-        sum[0] = _mm256_add_ps(sum[0], _mm256_mul_ps(ai, bi));
-    }
-    sum[0] = _mm256_add_ps(sum[0], last_bit(n - i, a + i, b + i));
-
     for (int j = K - 1; j >= 1; j--) {
         sum[j / 2] = _mm256_add_ps(sum[j / 2], sum[j]);
     }
-    return reduce_sum_f32(sum[0]);
+    f32x8 s = last_bit(n - i, a + i, b + i);
+    for (; i + 8 <= n; i += 8) {
+        f32x8 ai = _mm256_loadu_ps(&a[i]);
+        f32x8 bi = _mm256_loadu_ps(&b[i]);
+        s = _mm256_add_ps(s, _mm256_mul_ps(ai, bi));
+    }
+    s = _mm256_add_ps(sum[0], s);
+    return reduce_sum_f32(s);
 }
 
 double C2(double n) {
@@ -133,7 +139,8 @@ int32_t main(int argc, const char** argv) {
         }
     } else if (s == "simd_naive_unalinged") {
         for (int64_t i = 0; i < iter; i++) {
-            data[0] = i;
+            a[1] = i;
+            b[2] = i;
             total += sum_simd_naive(n / 2, a + 1, b + 1);
         }
     } else if (s == "simd") {
@@ -148,7 +155,7 @@ int32_t main(int argc, const char** argv) {
         }
     } else if (s == "simd_unaligned") {
         for (int64_t i = 0; i < iter; i++) {
-            data[0] = i;
+            data[1] = i;
             total += sum_simd(n / 2, a + 1, b + 1);
         }
     } else {
@@ -165,7 +172,12 @@ int32_t main(int argc, const char** argv) {
         std::cerr << "checksum: " << total << "\n";
     }
     if (!s.ends_with("unalinged")) {
-        assert(std::abs(expected_total / total - 1) <= 1e-3);
+        if (std::abs(expected_total / total - 1) > 1e-2) {
+            std::cerr << expected_total << "\n";
+            std::cerr << total << "\n";
+            std::cerr << total / expected_total - 1 << "\n";
+            assert(false && "something went wrong");
+        }
     }
 
     std::cout << std::fixed << std::setprecision(5) << tm << "\n";

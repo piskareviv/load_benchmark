@@ -124,7 +124,7 @@ int32_t main(int argc, const char** argv) {
         }
     } else if (s == "simd_naive_unaligned") {
         for (int64_t i = 0; i < iter; i++) {
-            data[0] = i;
+            data[1] = i;
             total += sum_simd_naive(n, data + 1);
         }
     } else if (s == "simd") {
@@ -139,7 +139,7 @@ int32_t main(int argc, const char** argv) {
         }
     } else if (s == "simd_unaligned") {
         for (int64_t i = 0; i < iter; i++) {
-            data[0] = i;
+            data[1] = i;
             total += sum_simd(n, data + 1);
         }
     } else {
