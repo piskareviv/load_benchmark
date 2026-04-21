@@ -70,7 +70,7 @@ f32 sum_simd(int n, const f32* a, const f32* b) {
     int i = 0;
 
     for (; i + 8 * K <= n; i += 8 * K) {
-        static_for<8>([&](auto j) {
+        static_for<K>([&](auto j) {
             f32x8 ai = _mm256_loadu_ps(&a[i + j * 8]);
             f32x8 bi = _mm256_loadu_ps(&b[i + j * 8]);
             sum[j] = _mm256_add_ps(sum[j], _mm256_mul_ps(ai, bi));

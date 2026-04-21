@@ -69,7 +69,7 @@ u32 sum_simd(int n, const u32* a) {
     int i = 0;
 
     for (; i + 8 * K <= n; i += 8 * K) {
-        static_for<8>([&](auto j) {
+        static_for<K>([&](auto j) {
             sum[j] = _mm256_add_epi32(sum[j], _mm256_loadu_si256((const i256*)(a + i + j * 8)));
         });
     }
