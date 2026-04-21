@@ -76,7 +76,7 @@ def plot_benchmark_results(results, compile_line, proc_model, file, output_file,
     my_dpi = 200
     fig, ax = plt.subplots(figsize=(1920 / my_dpi, 1080 / my_dpi), dpi=my_dpi)
 
-    ax.set_title(f'compile line: {compile_line}\ncpu: {proc}')
+    ax.set_title(f'compile: {compile_line}\nproc: {proc}')
 
     ax.set_xlabel("log_2 n")
     ax.set_ylabel("elements per ns")
@@ -85,8 +85,8 @@ def plot_benchmark_results(results, compile_line, proc_model, file, output_file,
     ax.set_xticks(np.arange(0, 31, 1))
     ax.set_yticks(np.arange(0, 100 * y_ticks + 1, y_ticks))
 
-    ax.set_xlim((L-0.1, R+0.1))
-    ax.set_ylim((0-0.1, 16+0.1))
+    ax.set_xlim((L-0.5, R+0.5))
+    ax.set_ylim((0-0.5, 16+0.5))
     
     ax.grid(linestyle="--")
     ax.axvline(x=13, linestyle="--")
@@ -135,8 +135,8 @@ if __name__ == "__main__":
     
 
     for file in ["A", "B"]:
-        run_and_plot(compile_gcc(file), proc_model=proc, file=file, output_file=f"{file}_gcc_{proc}", modes=modes)
-        run_and_plot(compile_clang(file), proc_model=proc, file=file, output_file=f"{file}_clang_{proc}", modes=modes)
+        run_and_plot(compile_gcc(file), proc_model=proc, file=file, output_file=f"{file}_gcc_{proc}".replace(" ", "-"), modes=modes)
+        run_and_plot(compile_clang(file), proc_model=proc, file=file, output_file=f"{file}_clang_{proc}".replace(" ", "-"), modes=modes)
 
 
 
