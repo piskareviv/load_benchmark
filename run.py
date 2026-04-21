@@ -45,7 +45,7 @@ def run_benchmark(compile_line, file, modes):
             if mode == "scalar":
                 iters //= 10
 
-            ret = system(f"perf stat -r 2 -d taskset -c 0 ./{file} {mode} {n} {iters} > tmp.txt 2> err.txt")
+            ret = system(f"perf stat -r 3 -d taskset -c 0 ./{file} {mode} {n} {iters} > tmp.txt 2> err.txt")
             assert ret == 0
 
             s = open("err.txt").read().replace(",", "")
