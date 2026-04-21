@@ -13,7 +13,7 @@ use_perf = True
 
 
 for file in ["A", "B"]:
-    ret = system(f"clang++ {file}.cpp -o {file} -std=c++23 -O2 -fno-tree-vectorize")
+    ret = system(f"clang++ {file}.cpp -o {file} -std=c++23 -O2 -fno-tree-vectorize -mavx2")
     assert ret == 0
     with open(f"{file}.txt", 'w') as f:
         for tp in modes:
