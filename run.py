@@ -69,7 +69,7 @@ def plot_benchmark_results(results, compile_line, proc_model, file, output_file,
     ax.set_title(f'compile: {compile_line}\nproc: {proc}')
 
     ax.set_xlabel("log_2 n")
-    ax.set_ylabel("elements per ns")
+    ax.set_ylabel("elements per cycle")
 
     ax.set_xticks(np.arange(0, 31, 1))
     ax.set_yticks(np.arange(0, 100 * y_ticks + 1, y_ticks))
