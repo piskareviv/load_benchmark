@@ -39,6 +39,15 @@ f32 sum_scalar_naive(int n, const f32* a, const f32* b) {
     return s;
 }
 
+f32x8 last_bit(int n, const f32* a, const f32* b) {
+    f32 ar[8];
+    memset(ar, 0, sizeof(ar));
+    for (int i = 0; i < n; i++) {
+        ar[i] = a[i] * b[i];
+    }
+    return _mm256_load_ps(ar);
+}
+
 // [[gnu::noinline]]
 f32 sum_simd_naive(int n, const f32* a, const f32* b) {
     f32x8 sum = _mm256_setzero_ps();
@@ -48,17 +57,13 @@ f32 sum_simd_naive(int n, const f32* a, const f32* b) {
         f32x8 bi = _mm256_loadu_ps(&b[i]);
         sum = _mm256_add_ps(sum, _mm256_mul_ps(ai, bi));
     }
-    f32 s = 0;
-    for (; i < n; i++) {
-        s += a[i] * b[i];
-    }
-    return s + reduce_sum_f32(sum);
+    sum = _mm256_add_ps(sum, last_bit(n - i, a + i, b + i));
+    return reduce_sum_f32(sum);
 }
 
 template <int K = 4>
 // [[gnu::noinline]]
 f32 sum_simd(int n, const f32* a, const f32* b) {
-    f32 s = 0;
     f32x8 sum[K];
     memset(sum, 0, sizeof(sum));
 
@@ -76,13 +81,12 @@ f32 sum_simd(int n, const f32* a, const f32* b) {
         f32x8 bi = _mm256_loadu_ps(&b[i]);
         sum[0] = _mm256_add_ps(sum[0], _mm256_mul_ps(ai, bi));
     }
-    for (; i < n; i++) {
-        s += a[i] * b[i];
-    }
+    sum[0] = _mm256_add_ps(sum[0], last_bit(n - i, a + i, b + i));
+
     for (int j = K - 1; j >= 1; j--) {
         sum[j / 2] = _mm256_add_ps(sum[j / 2], sum[j]);
     }
-    return s + reduce_sum_f32(sum[0]);
+    return reduce_sum_f32(sum[0]);
 }
 
 double C2(double n) {
@@ -100,6 +104,8 @@ int32_t main(int argc, const char** argv) {
     int64_t iter = 1e10 / n;
 
     f32* data = (f32*)_mm_malloc((4 * n + 63) / 64 * 64 + 10000, 64);
+    std::fill(data, data + n + 2, 0);
+
     f32* a = data;
     f32* b = data + n / 2;
 
@@ -125,6 +131,11 @@ int32_t main(int argc, const char** argv) {
             data[0] = i;
             total += sum_simd_naive(n / 2, a, b);
         }
+    } else if (s == "simd_naive_unalinged") {
+        for (int64_t i = 0; i < iter; i++) {
+            data[0] = i;
+            total += sum_simd_naive(n / 2, a + 1, b + 1);
+        }
     } else if (s == "simd") {
         for (int64_t i = 0; i < iter; i++) {
             data[0] = i;
@@ -138,7 +149,6 @@ int32_t main(int argc, const char** argv) {
     } else if (s == "simd_unaligned") {
         for (int64_t i = 0; i < iter; i++) {
             data[0] = i;
-            total += data[0];
             total += sum_simd(n / 2, a + 1, b + 1);
         }
     } else {
@@ -154,7 +164,7 @@ int32_t main(int argc, const char** argv) {
     if (total == 0) {
         std::cerr << "checksum: " << total << "\n";
     }
-    if (s != "simd_unalinged") {
+    if (!s.ends_with("unalinged")) {
         assert(std::abs(expected_total / total - 1) <= 1e-3);
     }
 

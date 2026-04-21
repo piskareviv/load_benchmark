@@ -101,7 +101,7 @@ int32_t main(int argc, const char** argv) {
     int64_t iter = 1e10 / n;
 
     u32* data = (u32*)_mm_malloc((4 * n + 63) / 64 * 64 + 10000, 64);
-    std::iota(data, data + n, 0);
+    std::iota(data, data + n + 1, 0);
 
     if (s == "scalar") {
         iter /= 10;
@@ -122,6 +122,11 @@ int32_t main(int argc, const char** argv) {
             data[0] = i;
             total += sum_simd_naive(n, data);
         }
+    } else if (s == "simd_naive_unaligned") {
+        for (int64_t i = 0; i < iter; i++) {
+            data[0] = i;
+            total += sum_simd_naive(n, data + 1);
+        }
     } else if (s == "simd") {
         for (int64_t i = 0; i < iter; i++) {
             data[0] = i;
@@ -135,7 +140,6 @@ int32_t main(int argc, const char** argv) {
     } else if (s == "simd_unaligned") {
         for (int64_t i = 0; i < iter; i++) {
             data[0] = i;
-            total += data[0];
             total += sum_simd(n, data + 1);
         }
     } else {
@@ -151,7 +155,7 @@ int32_t main(int argc, const char** argv) {
     if (total == 0) {
         std::cerr << "checksum: " << total << "\n";
     }
-    if (s != "simd_unaligned") {
+    if (!s.ends_with("unaligned")) {
         assert(total == expected_total);
     }
 
