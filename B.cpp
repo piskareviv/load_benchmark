@@ -30,7 +30,6 @@ f32 reduce_sum_f32(f32x8 vec) {
     return _mm256_cvtss_f32(vec);
 }
 
-// [[gnu::noinline]]
 f32 sum_scalar_naive(size_t n, const f32* a, const f32* b) {
     float s = 0;
     for (size_t i = 0; i < n; i++) {
@@ -54,7 +53,6 @@ inline f32x8 last_bit(size_t n, const f32* a, const f32* b) {
     return _mm256_and_ps(_mm256_mul_ps(_mm256_loadu_ps(a), _mm256_loadu_ps(b)), masks[n]);
 }
 
-// [[gnu::noinline]]
 f32 sum_simd_naive(size_t n, const f32* a, const f32* b) {
     f32x8 sum = _mm256_setzero_ps();
     size_t i = 0;
@@ -68,7 +66,6 @@ f32 sum_simd_naive(size_t n, const f32* a, const f32* b) {
 }
 
 template <size_t K = 4>
-// [[gnu::noinline]]
 f32 sum_simd(size_t n, const f32* a, const f32* b) {
     f32x8 sum[K];
     memset(sum, 0, sizeof(sum));

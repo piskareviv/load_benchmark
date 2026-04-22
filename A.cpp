@@ -24,18 +24,12 @@ __attribute__((always_inline)) constexpr void static_for(Functor functor) {
 }
 
 u32 reduce_sum_i32(i256 vec) {
-    // vec = _mm256_add_epi32(vec, _mm256_permute2x128_si256(vec, vec, 1));
-    // vec = _mm256_hadd_epi32(vec, vec);
-    // vec = _mm256_hadd_epi32(vec, vec);
-    // return _mm256_cvtsi256_si32(vec);
-    u32 a[8];
-    memcpy(a, &vec, 32);
-    u32 s = 0;
-    for (size_t i = 0; i < 8; i++) s += a[i];
-    return s;
+    vec = _mm256_add_epi32(vec, _mm256_permute2x128_si256(vec, vec, 1));
+    vec = _mm256_hadd_epi32(vec, vec);
+    vec = _mm256_hadd_epi32(vec, vec);
+    return _mm256_cvtsi256_si32(vec);
 }
 
-// [[gnu::noinline]]
 u32 sum_scalar_naive(size_t n, const u32* a) {
     u32 s = 0;
     for (size_t i = 0; i < n; i++) {
@@ -44,7 +38,6 @@ u32 sum_scalar_naive(size_t n, const u32* a) {
     return s;
 }
 
-// [[gnu::noinline]]
 u32 sum_simd_naive(size_t n, const u32* a) {
     u32 s = 0;
     i256 sum = _mm256_setzero_si256();
@@ -60,7 +53,6 @@ u32 sum_simd_naive(size_t n, const u32* a) {
 }
 
 template <size_t K = 4>
-// [[gnu::noinline]]
 u32 sum_simd(size_t n, const u32* a) {
     u32 s = 0;
     i256 sum[K];
