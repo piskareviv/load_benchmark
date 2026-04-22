@@ -109,10 +109,10 @@ int32_t main(int argc, const char** argv) {
     n += n % 2;
 
     f32* data = (f32*)_mm_malloc((4 * n + 63) / 64 * 64 + 10000, 64);
-    std::fill(data, data + n + 2, 0);
+    std::fill(data, data + n + 1000, 0);
 
     f32* a = data;
-    f32* b = data + n / 2;
+    f32* b = data + (n / 2 + 63) / 64 * 64;
 
     std::iota(a, a + n / 2, 0);
     std::fill(b, b + n / 2, 1);
