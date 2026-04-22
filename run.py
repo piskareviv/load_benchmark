@@ -1,4 +1,4 @@
-
+import os
 from os import path
 import numpy as np
 from matplotlib import pyplot as plt
@@ -16,7 +16,7 @@ TOTAL_SIZE = 10**10
 L, R = (7, 21)
 
 
-def run_benchmark(compile_line, file, modes):
+def run_benchmark(compile_line, file, modes, output_file = None):
 
     rng = list(map(lambda x: int(round(x)), 2**np.linspace(L, R, (R - L) * 3 + 1)))
 
@@ -55,9 +55,28 @@ def run_benchmark(compile_line, file, modes):
 
         print()
 
+    if output_file is not None:
+        with open(output_file, "w") as f:
+            for mode, res in zip(modes, results):
+                print(mode, file=f)
+                for n, perf in res:
+                    print(n, f"{perf:.20f}", file=f)
+        
+
+
     system("rm tmp.txt")
     system("rm err.txt")
 
+    return results
+
+def read_results(file):
+    results = []
+    for line in open(file).readlines():
+        if line[0].isnumeric():
+            x, y = map(float, line.split())
+            results[-1] += [(x, y)]
+        else:
+            results += [[]]
     return results
 
 
@@ -94,7 +113,12 @@ def plot_benchmark_results(results, compile_line, proc_model, file, output_file,
 
 
 def run_and_plot(compile_line, proc_model, file, output_file, modes, **kwargs):
-    results = run_benchmark(compile_line=compile_line, file=file, modes=modes)
+    tmp_file = f"{output_file}.txt"
+
+    _results = run_benchmark(compile_line=compile_line, file=file, modes=modes, output_file=tmp_file)
+
+    results = read_results(tmp_file)
+
     plot_benchmark_results(results=results, compile_line=compile_line, proc_model=proc_model, file=file, output_file=output_file, modes=modes, **kwargs)
 
 
@@ -116,6 +140,9 @@ if __name__ == "__main__":
     files = ["A", "B"]
     modes = ["scalar", "simd_naive", "simd_naive_unaligned", "simd", "simd_unaligned", "simd_x2"]
 
+    if not os.path.exists("./tmp"):
+        os.mkdir("./tmp")
+        
     for file in ["A", "B"]:
-        run_and_plot(compile_gcc(file), proc_model=proc, file=file, output_file=f"{file}_gcc_{proc}".replace(" ", "-"), modes=modes)
-        run_and_plot(compile_clang(file), proc_model=proc, file=file, output_file=f"{file}_clang_{proc}".replace(" ", "-"), modes=modes)
+        run_and_plot(compile_gcc(file), proc_model=proc, file=file, output_file=f"./tmp/{file}_gcc_{proc}".replace(" ", "-"), modes=modes)
+        run_and_plot(compile_clang(file), proc_model=proc, file=file, output_file=f"./tmp/{file}_clang_{proc}".replace(" ", "-"), modes=modes)
